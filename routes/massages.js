@@ -6,22 +6,37 @@ const User = require("../models/User");
 
 // Send a message
 router.post("/", async (req, res) => {
-  const { accountId, userId, message } = req.body;
+  try {
+    const { accountId, userId, message } = req.body;
 
-  const account = await Account.findById(accountId);
-  const user = await User.findById(userId);
+    // Validate required fields
+    if (!accountId || !userId || !message) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
 
-  if (!account || !user) {
-    return res.status(400).json({ error: "Invalid account or user" });
+    // Fetch the account and user
+    const account = await Account.findById(accountId);
+    const user = await User.findById(userId);
+
+    if (!account) {
+      return res.status(404).json({ error: "Account not found" });
+    }
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Simulate message sending (Replace this with Telegram API integration)
+    console.log(`📩 Message sent from ${account.phoneNumber} to ${user.username}: ${message}`);
+
+    // Log message
+    const log = new MessageLog({ accountId, userId, message, status: "sent" });
+    await log.save();
+
+    res.status(200).json({ message: "Message sent successfully!" });
+  } catch (error) {
+    console.error("Error sending message:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  // Simulating sending a message (You can integrate Telegram API here)
-  console.log(`Message sent from ${account.phoneNumber} to ${user.username}: ${message}`);
-
-  const log = new MessageLog({ accountId, userId, message, status: "sent" });
-  await log.save();
-
-  res.json({ message: "Message sent successfully!" });
 });
 
 module.exports = router;
